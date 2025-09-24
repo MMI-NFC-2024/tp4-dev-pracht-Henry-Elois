@@ -1,21 +1,68 @@
 ---
-import PlotFigure from "../components/PlotFigure.astro";
 import Layout from "../layouts/Layout.astro";
-import * as Plot from "@observablehq/plot";
-import penguins from "../assets/penguins.json";
 ---
 
 <Layout>
-  <h1 class="text-2xl">Test Astro et Plot (Observablehq)</h1>
-  <PlotFigure
-    options={{
-      marks: [
-        Plot.dot(penguins, {
-          x: "culmen_length_mm",
-          y: "culmen_depth_mm",
-          stroke: "species",
-        }),
-      ],
-    }}
-  />
+  <h2 class="text-xl font-semibold mb-3">Penguin avec filtre (espèce)</h2>
+
+  <label for="species-client" class="block text-sm mb-1">Espèce</label>
+  <select id="species-client" class="border rounded px-3 py-2 mb-4">
+    <option value="">All species</option>
+    <option value="Adelie">Adelie</option>
+    <option value="Chinstrap">Chinstrap</option>
+    <option value="Gentoo">Gentoo</option>
+  </select>
+
+  <div id="plot-filter"></div>
+
+  <script>
+    // Importe la librairie Plot d'ObservableHQ
+    import * as Plot from "@observablehq/plot";
+    // Importe les données des manchots depuis un fichier JSON
+    import penguins from "../assets/penguins.json";
+
+    // Récupère l'élément select pour choisir l'espèce
+    const selectSpecies = document.getElementById("species-client");
+    const container = document.getElementById("plot-filter");
+
+    // Fonction pour afficher le graphique
+    function renderPlot() {
+      // Récupère l'espèce sélectionnée
+      const species = /** @type {HTMLSelectElement} */ (selectSpecies).value;
+
+      // Vide le contenu précédent de la div
+      container.innerHTML = "";
+
+      // Dataset filtré (si espèce choisie)
+      // const data = species
+      //   ? penguins.filter((p) => p.species === species)
+      //   : penguins;
+
+      // Crée le graphique avec Plot
+      const plot = Plot.plot({
+        grid: true,
+        marks: [
+          // Ajoute les points du graphique, filtrés selon l'espèce choisie
+          Plot.dot(penguins, {
+            x: "culmen_length_mm", // Axe X : longueur du bec
+            y: "culmen_depth_mm", // Axe Y : profondeur du bec
+            stroke: "species", // Couleur selon l'espèce
+            title: (d) => `${d.species} • ${d.island} • ${d.sex ?? "?"}`,
+            filter: (d) =>( species === "" || d.species === species),
+          }),
+        ],
+        x: { label: "Culmen length (mm)" },
+        y: { label: "Culmen depth (mm)" },
+      });
+
+      // Ajoute le graphique à la div
+      container.appendChild(plot);
+    }
+
+    // Ajoute un écouteur d'événement pour le changement d'espèce (appel 'renderPlot')
+    selectSpecies?.addEventListener("change", renderPlot);
+
+    // Affiche le graphique au chargement de la page
+    renderPlot();
+  </script>
 </Layout>
