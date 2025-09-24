@@ -1,10 +1,10 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import penguins from "../assets/penguins.json";
 ---
 
 <Layout>
   <h2 class="text-xl font-semibold mb-3">Penguin avec de multiples filtres</h2>
-
   <label for="species-client" class="block text-sm mb-1">Espèce</label>
   <div class="flex gap-4 mb-4">
     <select id="species-client" class="border rounded px-3 py-2 mb-4">
@@ -25,13 +25,20 @@ import Layout from "../layouts/Layout.astro";
       <option value="Female">Female</option>
     </select>
   </div>
+
   <div id="plot-filter"></div>
+
+  <!-- Passer les données au script côté client -->
+  <script define:vars={{ penguins }}>
+    window.penguinsData = penguins;
+  </script>
 
   <script>
     // Importe la librairie Plot d'ObservableHQ
     import * as Plot from "@observablehq/plot";
-    import penguins from "../assets/penguins.json";
 
+    // Utilise les données des manchots depuis le serveur
+    const penguins = window.penguinsData;
 
     // Récupère l'élément select pour choisir l'espèce
     const selectSpecies = document.getElementById("species-client");
@@ -45,9 +52,9 @@ import Layout from "../layouts/Layout.astro";
       const species = /** @type {HTMLSelectElement} */ (selectSpecies).value;
       const island = /** @type {HTMLSelectElement} */ (selectIsland).value;
       const sex = /** @type {HTMLSelectElement} */ (selectSex).value;
+
       // Vide le contenu précédent de la div
       container.innerHTML = "";
-      
 
       // Dataset filtré (si espèce choisie)
       // const data = species
@@ -73,15 +80,25 @@ import Layout from "../layouts/Layout.astro";
         x: { label: "Culmen length (mm)" },
         y: { label: "Culmen depth (mm)" },
       });
-
       // Ajoute le graphique à la div
       container.appendChild(plot);
     }
 
-    // Ajoute un écouteur d'événement pour le changement d'espèce (appel 'renderPlot')
-    selectSpecies?.addEventListener("change", renderPlot);
+    // Fonction pour attacher les événements
+    function attachEvents() {
+      // Ajoute un écouteur d'événement pour le changement d'espèce (appel 'renderPlot')
+      selectSpecies?.addEventListener("change", renderPlot);
+      selectIsland?.addEventListener("change", renderPlot);
+      selectSex?.addEventListener("change", renderPlot);
+      // Affiche le graphique au chargement de la page
+      renderPlot();
+    }
 
-    // Affiche le graphique au chargement de la page
-    renderPlot();
+    // Attendre que le DOM soit prêt
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", attachEvents);
+    } else {
+      attachEvents();
+    }
   </script>
 </Layout>
